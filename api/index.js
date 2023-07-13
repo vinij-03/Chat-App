@@ -7,13 +7,15 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 
 dotenv.config();
-mongoose.connect(process.env.url );
+mongoose.connect(process.env.url);
 
 app.use(express.json());
-app.use(cors({
-  credentials: true,
-  origin : process.env.client_url,
-}));
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.client_url,
+  })
+);
 
 const jwtSecret = process.env.jwtSecret;
 app.get("/test", (req, res) => {
@@ -28,7 +30,7 @@ app.post("/register", async (req, res) => {
       if (err) {
         res.status(500).json({ error: "Error signing JWT token" });
       } else {
-        res.cookie("token", token).status(200).json({ success: true });
+        res.cookie("token", token).status(200).json({ id : newuser._id });
       }
     });
   } catch (err) {

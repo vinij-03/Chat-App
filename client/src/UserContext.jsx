@@ -1,18 +1,26 @@
 import { createContext, useState } from 'react'
+import PropTypes from 'prop-types';
 
 
-export const UserContext = createContext()
+export const UserContext = createContext({});
 // function UserContext() {
 //   return (
 //     <div>UserContext</div>
 //   )
 // }
 
-export function UserContextProvider(children) {
 
+export function UserContextProvider({ children }) {
     const [username, setUsername] = useState("");
     const [id, setId] = useState("");
+
     return (
-        <UserContext.Provider value={{ username, setUsername, id, setId }}>{children}</UserContext.Provider>
-    )
+        <UserContext.Provider value={{ username, setUsername, id, setId }}>
+            {children}
+        </UserContext.Provider>
+    );
 }
+
+UserContextProvider.propTypes = {
+    children: PropTypes.node.isRequired,
+};

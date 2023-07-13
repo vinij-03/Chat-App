@@ -1,18 +1,20 @@
 import axios from 'axios';
-import { useState } from 'react';
-import { useContext } from 'react';
-import { UserContext } from '../UserContext';
+import { useState, useContext } from 'react';
+import { UserContext } from '../UserContext.jsx';
 
 function Register() {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const {setUsername : setLogedinUsername ,setId}=  useContext(UserContext) ; 
+    const { setUsername : setLoggedUser, setId } = useContext(UserContext);
 
 
-    async function register(ev){
+
+    async function register(ev) {
         ev.preventDefault();
-        await axios.post("/register", { username, email, password })
+        const { data } = await axios.post("/register", { username, email, password })
+        setLoggedUser(username);
+        setId(data.id)
     }
     return (
         <div className=" bg-blue-100 h-screen flex items-center" >
