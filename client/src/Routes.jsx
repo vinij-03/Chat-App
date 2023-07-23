@@ -1,16 +1,17 @@
 import { useContext } from "react"
-import Register from "./pages/Register";
+import AuthCheck from "./pages/AuthCheck";
 import { UserContext } from "./UserContext";
     
     function Routes() {
         const {username, id}=useContext(UserContext);
+        // console.log(id) ;
 
         if(username){
             return 'logged in'
         }
       return (
-        <Register/>
+        <AuthCheck/>
         )
     }
     
-    export default Routes
+    export default Routes 
