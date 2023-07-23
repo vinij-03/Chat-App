@@ -50,7 +50,7 @@ app.post('/login', async (req,res)=>{
   if(foundUser){
     const match = bcrypt.compareSync(password, foundUser.password);
     if(match){
-      jwt.sign({ userId: newuser._id, username }, jwtSecret, {}, (err, token) => {
+      jwt.sign({ userId: foundUser._id, username }, jwtSecret, {}, (err, token) => {
         if (err) {
           res.status(500).json({ error: "Error signing JWT token" });
         } else {
