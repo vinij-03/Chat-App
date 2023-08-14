@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
+const ws = require("ws");
 
 app.use(express.json());
 app.use(cookieParser())
@@ -84,4 +85,16 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.listen(4000);
+
+const server = app.listen(4000);
+
+const wss = new ws.WebSocketServer({ server });
+wss.on("connection", (connection,req) => {
+  const cookies = req.headers.cookie;
+  if(cookies){
+    tokenCookieString = cookies.split(';').find(str = stringStartsWith(str,'token='));
+    console.log(tokenCookieString);
+  }
+  // console.log("user connected");
+  // connection.send('hello');
+});
