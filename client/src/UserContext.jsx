@@ -1,31 +1,27 @@
-import { createContext, useEffect, useState } from 'react'
-import PropTypes from 'prop-types';
-import axios from 'axios';
+import axios from 'axios'
+import { useState, createContext, useEffect } from 'react'
 
-export const UserContext = createContext({});
+export const UserContext = createContext({})
 
-export function UserContextProvider({ children }) {
-    const [username, setUsername] = useState(null);
-    const [id, setId] = useState(null);
+export const UserContextProvider = ({ children }) => {
+    const [username, setUsername] = useState(null)
+    const [id, setId] = useState(null)
 
     useEffect(() => {
-        axios.get('/profile').then(response => {
-            setId(response.data.userId);
-            setUsername(response.data.username);
-            // console.log(response.data)
+        axios.get('/profile').then(res => {
+            setUsername(res.data.username);
+            setId(res.data.userId);
             
+        }).catch(error => {
+            console.error("Error fetching profile:", error);
         });
     }, []);
-    // console.log(id)
-    // console.log(username)
-    // console.log(response.data)
+
+    // console.log(username, id)
+
     return (
         <UserContext.Provider value={{ username, setUsername, id, setId }}>
             {children}
         </UserContext.Provider>
-    );
-}
-
-UserContextProvider.propTypes = {
-    children: PropTypes.node.isRequired,
-};
+    )
+} 

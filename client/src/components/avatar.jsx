@@ -1,9 +1,9 @@
-// import React from 'react'
+import React from 'react'
 
-function avatar( {username}) {
+function avatar({ username }) {
   return (
-    <div className='w-8 m-2 h-8 bg-gray-200 rounded-full  flex items-center'>
-      <div className='text-center w-full'>{username[0]}</div>
+    <div className='w-8 h-8 flex items-center justify-center rounded-full bg-[#B67352] text-white mr-3'>
+      <div className='text-center'>{username[0]}</div>
     </div>
 
   )

@@ -1,18 +1,26 @@
-import { useContext } from "react"
-import AuthCheck from "./pages/AuthCheck";
-import { UserContext } from "./UserContext";
-import Chat from "./pages/Chat";
-    
-    function Routes() {
-        const {username, id}=useContext(UserContext);
-        // console.log(id) ;
 
-        if(username){
-            return (<Chat/>)
-        }
-      return (
-        <AuthCheck/>
+// import React from 'react'
+import RegisterLogin from './pages/RegisterLogin'
+import { useContext } from 'react'
+import { UserContext } from './UserContext'
+import AppPage from './pages/ChatPage'
+
+
+function Routes() {
+    const { username, id } = useContext(UserContext)
+
+    if (username) {
+        return (
+            <>
+                <AppPage />
+            </>
         )
     }
-    
-    export default Routes 
+    return (
+        <>
+            <RegisterLogin />
+        </>
+    )
+}
+
+export default Routes

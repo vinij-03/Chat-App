@@ -1,0 +1,22 @@
+
+        
+<div className="flex items-start">
+                <div className="bg-[#f5dd61] text-[#1e1801] p-3 rounded max-w-lg" style={{ border: '1px solid #1e1801' }}>
+                  Hi there! Lorem ipsum, dolor sit amet consectetur adipisicing elit. Animi, debitis dignissimos pariatur ratione eaque minima dolores amet adipisci soluta harum sed, cupiditate id eius a molestias ad voluptas laboriosam vero!
+                </div>
+              </div>
+              <div className="flex items-start justify-end">
+                <div className="bg-[#59d5e0] text-[#1e1801] p-3 rounded max-w-lg" style={{ border: '1px solid #1e1801' }}>
+                  Hello! Lorem, ipsum dolor sit amet consectetur adipisicing elit. Enim porro explicabo iure modi voluptas nisi voluptatibus expedita quisquam voluptatum vel repellat sunt possimus obcaecati sapiente incidunt, tenetur quas? Voluptatem illum facilis dicta totam, unde eius veniam. Nulla ducimus eligendi iste nobis a id deserunt consectetur maiores repellat!
+                </div>
+              </div>
+
+          {selectedUserId &&(
+          <div className="flex items-start justify-end">
+            {messageArray.map(messages =>(
+              <div className="bg-[#59d5e0] text-[#1e1801] p-3 rounded max-w-lg" style={{ border: '1px solid #1e1801' }} key={messages}>
+                {messages.text}
+              </div>
+            ))}
+          </div>
+        )}
