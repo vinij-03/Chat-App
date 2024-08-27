@@ -1,13 +1,16 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import Avatar from '../components/Avatar';
 import { UserContext } from '../UserContext';
-import {uniqBy} from 'lodash';
+import { uniqBy } from 'lodash';
+import axios from 'axios';
+
 function ChatPage() {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState({});
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const [message, setMessage] = useState([]);
+  const messageEndRef = useRef(null);
 
   const { username, id } = useContext(UserContext);
 
@@ -17,8 +20,25 @@ function ChatPage() {
 
     ws.addEventListener('message', handleMessage);
 
-    
+    return () => {
+      ws.removeEventListener('message', handleMessage);
+      ws.close();
+    };
   }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [message]);
+
+  function scrollToBottom() {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  useEffect(() => {
+    if(selectedUserId) {
+      axios.get('/messages/'+selectedUserId).then(res => {})
+    }
+  },[selectedUserId])
 
   function showOninePeople(peopleArray) {
     const people = {};
@@ -33,7 +53,6 @@ function ChatPage() {
     if ('online' in messageData) {
       showOninePeople(messageData.online);
     } else if ('text' in messageData) {
-
       setMessage(prev => [...prev, { ...messageData }]);
     }
   }
@@ -42,21 +61,22 @@ function ChatPage() {
     e.preventDefault();
     ws.send(JSON.stringify({
       recepient: selectedUserId,
-      
       text: newMessage
     }));
     setNewMessage('');
     setMessage(prev => [...prev, {
-       text: newMessage,
-        sender:id,
-        recepient: selectedUserId,
-       }]);
+      text: newMessage,
+      sender: id,
+      recepient: selectedUserId,
+      id: Date.now()
+    }]);
   }
 
   const excludeself = { ...onlinePeople };
   delete excludeself[id];
 
   const noDupMsg = uniqBy(message, 'id');
+
   return (
     <>
       <div className="flex h-screen bg-[#f6f4e8] text-[#2f2f2f] font-mono">
@@ -92,14 +112,13 @@ function ChatPage() {
                   {noDupMsg.map((messages, index) => (
                     <div
                       key={index}
-                      className={`p-3 mt-2 rounded max-w-lg break-words ${messages.sender === id ? 'bg-[#d1e8c1] text-[#2f2f2f] self-end' : 'bg-[#ece5c7] text-[#2f2f2f] self-start'}`}
+                      className={`p-3 mt-2 rounded max-w-[80%] break-words ${messages.sender === id ? 'bg-[#d1e8c1] text-[#2f2f2f] self-end' : 'bg-[#ece5c7] text-[#2f2f2f] self-start'}`}
                       style={{ border: '1px solid #b5b09c' }}
                     >
-                      sender:{messages.sender}<br/>
-                      my id: {id}<br/>
                       {messages.text}
                     </div>
                   ))}
+                  <div ref={messageEndRef} />
                 </div>
               )}
             </div>
