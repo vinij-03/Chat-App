@@ -107,8 +107,8 @@ app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   try {
     const createdUser = await User.create({
-      username: shSynusername,
-      password: bcrypt.hac(password, bcryptSalt),
+      username: username,
+      password: bcrypt.hash(password, bcryptSalt),
     });
     jwt.sign(
       { userId: createdUser._id, username },

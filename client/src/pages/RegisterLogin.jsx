@@ -17,8 +17,7 @@ function RegisterLogin() {
             // console.log(data)
             setLoggedInUsername(username);
             setId(data.id);
-            // console.log(id)
-            
+            // console.log(id) 
         } catch (error) {
             console.error("An error occurred during registration or login:", error);
         }

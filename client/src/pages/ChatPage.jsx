@@ -1,5 +1,4 @@
 import { useEffect, useState, useContext, useRef } from 'react';
-import Avatar from '../components/Avatar';
 import { UserContext } from '../UserContext';
 import { uniqBy } from 'lodash';
 import axios from 'axios';
@@ -35,10 +34,10 @@ function ChatPage() {
   }
 
   useEffect(() => {
-    if(selectedUserId) {
-      axios.get('/messages/'+selectedUserId).then(res => {})
+    if (selectedUserId) {
+      axios.get('/messages/' + selectedUserId).then((res) => { });
     }
-  },[selectedUserId])
+  }, [selectedUserId]);
 
   function showOninePeople(peopleArray) {
     const people = {};
@@ -53,23 +52,28 @@ function ChatPage() {
     if ('online' in messageData) {
       showOninePeople(messageData.online);
     } else if ('text' in messageData) {
-      setMessage(prev => [...prev, { ...messageData }]);
+      setMessage((prev) => [...prev, { ...messageData }]);
     }
   }
 
   function sendMessage(e) {
     e.preventDefault();
-    ws.send(JSON.stringify({
-      recepient: selectedUserId,
-      text: newMessage
-    }));
+    ws.send(
+      JSON.stringify({
+        recepient: selectedUserId,
+        text: newMessage,
+      })
+    );
     setNewMessage('');
-    setMessage(prev => [...prev, {
-      text: newMessage,
-      sender: id,
-      recepient: selectedUserId,
-      id: Date.now()
-    }]);
+    setMessage((prev) => [
+      ...prev,
+      {
+        text: newMessage,
+        sender: id,
+        recepient: selectedUserId,
+        id: Date.now(),
+      },
+    ]);
   }
 
   const excludeself = { ...onlinePeople };
@@ -78,73 +82,67 @@ function ChatPage() {
   const noDupMsg = uniqBy(message, 'id');
 
   return (
-    <>
-      <div className="flex h-screen bg-[#f6f4e8] text-[#2f2f2f] font-mono">
-        {/* Contacts List */}
-        <div className="w-1/4 bg-[#ece5c7] p-4 border-r border-[#b5b09c]">
-          <h2 className="text-xl font-semibold mb-4">Contacts</h2>
-          <div className="space-y-2">
-            {Object.keys(excludeself).map((userId) => (
-              <div
-                onClick={() => selectedUserId ? setSelectedUserId('') : setSelectedUserId(userId)}
-                key={userId}
-                className={
-                  "p-2 flex items-center cursor-pointer rounded " +
-                  (userId === selectedUserId ? 'bg-[#d4cea1] text-[#2f2f2f]' : 'bg-[#ece5c7] text-[#2f2f2f]')
-                }
-                style={{ border: '1px solid #b5b09c' }}
-              >
-                <div className="flex items-center gap-2 py-2 pl-4">
-                  <Avatar username={onlinePeople[userId]} userId={userId} />
-                  <span>{onlinePeople[userId]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Chat Area */}
-        <div className="w-3/4 p-2 flex flex-col">
-          <div className="flex-1 overflow-y-auto bg-[#f6f4e8] p-4 rounded-lg" style={{ border: '1px solid #b5b09c' }}>
-            <div className="space-y-6">
-              {selectedUserId && (
-                <div className="flex flex-col">
-                  {noDupMsg.map((messages, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 mt-2 rounded max-w-[80%] break-words ${messages.sender === id ? 'bg-[#d1e8c1] text-[#2f2f2f] self-end' : 'bg-[#ece5c7] text-[#2f2f2f] self-start'}`}
-                      style={{ border: '1px solid #b5b09c' }}
-                    >
-                      {messages.text}
-                    </div>
-                  ))}
-                  <div ref={messageEndRef} />
-                </div>
-              )}
+    <div className="flex h-screen bg-[#1a1c23] text-white font-mono">
+      {/* Contacts List */}
+      <div className="w-1/4 bg-[#252836] p-4 border-r border-[#3b3f51]">
+        <h2 className="text-xl font-semibold mb-4 text-[#a6a8b9]">Contacts</h2>
+        <div className="space-y-2">
+          {Object.keys(excludeself).map((userId) => (
+            <div
+              onClick={() => selectedUserId ? setSelectedUserId('') : setSelectedUserId(userId)}
+              key={userId}
+              className={`p-2 flex items-center cursor-pointer rounded-md transition-all duration-150 ${userId === selectedUserId
+                  ? 'bg-[#3b82f6] text-white'
+                  : 'bg-[#2e3140] text-[#a6a8b9]'
+                } hover:bg-[#343746] hover:text-white`}
+            >
+              <span className="text-sm">{onlinePeople[userId]}</span>
             </div>
-          </div>
-
-          {!!selectedUserId && (
-            <form onSubmit={sendMessage} className="mt-4 flex items-center">
-              <input
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                className="flex-grow p-2 bg-[#ece5c7] text-[#2f2f2f] rounded h-12 max-h-36 resize-none overflow-y-auto"
-                style={{ border: '1px solid #b5b09c' }}
-              />
-              <button
-                type="submit"
-                className="ml-4 px-4 py-2 bg-[#d1e8c1] text-[#2f2f2f] rounded hover:bg-[#c6dfaf] transition"
-                style={{ border: '1px solid #b5b09c' }}
-              >
-                Send
-              </button>
-            </form>
-          )}
+          ))}
         </div>
       </div>
-    </>
+
+      {/* Chat Area */}
+      <div className="w-3/4 p-4 flex flex-col">
+        <div className="flex-1 overflow-y-auto bg-[#252836] p-6 rounded-md shadow-md">
+          <div className="space-y-4">
+            {selectedUserId && (
+              <div className="flex flex-col">
+                {noDupMsg.map((messages, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 mt-2 rounded-lg max-w-[75%] break-words transition-all duration-150 ${messages.sender === id
+                        ? 'bg-[#3b82f6] text-white self-end animate-slide-in-right'
+                        : 'bg-[#2e3140] text-[#a6a8b9] self-start animate-slide-in-left'
+                      }`}
+                  >
+                    {messages.text}
+                  </div>
+                ))}
+                <div ref={messageEndRef} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {!!selectedUserId && (
+          <form onSubmit={sendMessage} className="mt-4 flex items-center">
+            <input
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              className="flex-grow p-2 bg-[#2e3140] text-white rounded-lg h-12 focus:ring-2 focus:ring-[#3b82f6] transition-all duration-150"
+            />
+            <button
+              type="submit"
+              className="ml-4 px-4 py-2 bg-[#3b82f6] text-white rounded-lg hover:bg-[#2563eb] transition-all duration-150"
+            >
+              Send
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
 
