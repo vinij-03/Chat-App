@@ -40,19 +40,40 @@ app.get("/test", (req, res) => {
   res.json("Hello World!");
 });
 
-async function getUserData(req) {
-return new Promise((resolve, reject) => {
-  const token = req.cookies?.token;
-  if (token) {
-    jwt.verify(token, jwtsecret, {}, (err, userData) => {
-      if (err) throw err;
-      resolve(userData);
-    });
-  } else {
-    reject("no token");
-  }
+async function getUserDataFromRequest(req) {
+  return new Promise((resolve, reject) => {
+    const token = req.cookies?.token;
+    if (token) {
+      jwt.verify(token, jwtsecret, {}, (err, userData) => {
+        if (err) throw err;
+        resolve(userData);
+      });
+    } else {
+      reject("no token");
+    }
+  });
+}
+
+app.get("/test", (req, res) => {
+  res.json("test ok");
 });
-} 
+
+app.get("/messages/:userId", async (req, res) => {
+  const { userId } = req.params;
+  // console.log(req.params);
+  const userData =  await getUserDataFromRequest(req);
+  const ourUserId = userData.userId;
+  const messages = await Message.find({
+    sender: { $in: [userId, ourUserId] },
+    recipient: { $in: [userId, ourUserId] },
+  }).sort({ createdAt: 1 });
+  res.json(messages);
+});
+
+app.get("/people", async (req, res) => {
+  const users = await User.find({}, {'_id': 1, 'username': 1});
+  res.json(users);
+});
 
 app.get("/profile", (req, res) => {
   const token = req.cookies?.token;
@@ -65,18 +86,6 @@ app.get("/profile", (req, res) => {
   } else {
     res.status(401).json("Unauthorized");
   }
-});
-
-app.get('/messages/:userId', async (req,res) => {
-  const {userId} = req.params;
-  const userData = await getUserData(req);
-  const ourUserId = userData.userId;
-  console.log({userId,ourUserId});
-  const messages = await Message.find({
-    sender:{$in:[userId,ourUserId]},
-    recipient:{$in:[userId,ourUserId]},
-  }).sort({createdAt: 1});
-  res.json(messages);
 });
 
 app.post("/login", async (req, res) => {
@@ -101,14 +110,23 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
+app.post("/logout", (req, res) => {
+  res.cookie("token", "", {
+    expires: new Date(0), // Set expiration to past date
+    sameSite: "none",
+    secure: true,
+    httpOnly: true, // Helps prevent client-side access
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
   try {
+    const hashedPassword = await bcrypt.hash(password, bcryptSalt).json('ok'); // Await the hash
     const createdUser = await User.create({
       username: username,
-      password: bcrypt.hash(password, bcryptSalt),
+      password: hashedPassword, // Save the hashed password
     });
     jwt.sign(
       { userId: createdUser._id, username },
@@ -131,54 +149,68 @@ app.post("/register", async (req, res) => {
   }
 });
 
-const server = app.listen(3000, () => { 
+
+
+const server = app.listen(3000, () => {
   console.log("Server said hello world");
 });
 
-const wss = new ws.WebSocketServer({server})
-wss.on("connection", (connection,req) => {
+const wss = new ws.WebSocketServer({ server });
+wss.on("connection", (connection, req) => {
   // console.log("connected");
   const cookie = req.headers.cookie;
   if (cookie) {
-    const tokenCookieString = cookie.split(';').find(str => str.startsWith('token='));
+    const tokenCookieString = cookie
+      .split(";")
+      .find((str) => str.startsWith("token="));
     if (tokenCookieString) {
-      const token = tokenCookieString.split('=')[1];
+      const token = tokenCookieString.split("=")[1];
       if (token) {
         jwt.verify(token, jwtsecret, {}, (err, userData) => {
           if (err) throw err;
           const { userId, username } = userData;
           connection.userId = userId;
           connection.username = username;
-          
-        })
+        });
       }
     }
   }
-  
- [...wss.clients].forEach(client => {
-   client.send(
-     JSON.stringify({
-       online: [...wss.clients].map((c) => ({
-         userId: c.userId,
-         username: c.username,
-       })),
-     })
-   );
- })
 
-connection.on("message", async(message) => {
-  const messageData = JSON.parse(message.toString()); 
-  // console.log(message);
-  const {recepient,text} = messageData;
-  if(recepient && text){
-     const messageDoc =  await  Message.create({sender: connection.userId, recepient, text});
-    [...wss.clients].filter(c=> c.userId === recepient).forEach(c => c.send(JSON.stringify({
-      text , 
-      sender : connection.userId, 
-      recepient,
-      id: messageDoc._id
-    })))
-  }
-});
-});
+  [...wss.clients].forEach((client) => {
+    client.send(
+      JSON.stringify({
+        online: [...wss.clients].map((c) => ({
+          userId: c.userId,
+          username: c.username,
+        })),
+      })
+    );
+  });
 
+  connection.on("message", async (message) => {
+    const messageData = JSON.parse(message.toString());
+    // console.log(message.toString());
+    const { recipient, text , file } = messageData;
+    if (recipient && text) {
+      const messageDoc = await Message.create({
+        sender: connection.userId,
+        recipient,
+        text,
+      });
+      // console.log(messageDoc.text);
+      [...wss.clients]
+      // console.log(text)
+        .filter((c) => c.userId === recipient)
+        .forEach((c) =>
+          c.send(
+            JSON.stringify({
+              text,
+              sender: connection.userId,
+              recipient,
+              _id: messageDoc._id,
+            })
+          )
+        );
+    }
+  });
+});

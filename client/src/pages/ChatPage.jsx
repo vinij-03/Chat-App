@@ -2,6 +2,7 @@ import { useEffect, useState, useContext, useRef } from 'react';
 import { UserContext } from '../UserContext';
 import { uniqBy } from 'lodash';
 import axios from 'axios';
+import OnlineInd from '../components/OnlineInd';
 
 function ChatPage() {
   const [ws, setWs] = useState(null);
@@ -10,20 +11,24 @@ function ChatPage() {
   const [newMessage, setNewMessage] = useState('');
   const [message, setMessage] = useState([]);
   const messageEndRef = useRef(null);
+  const [offlinePeople, setOfflinePeople] = useState({});
 
-  const { username, id } = useContext(UserContext);
+  const { username,  id , setId, setUsername } = useContext(UserContext);
 
   useEffect(() => {
+    connectToWs();
+  }, [selectedUserId]);
+  function connectToWs() {
     const ws = new WebSocket('ws://localhost:3000');
     setWs(ws);
-
     ws.addEventListener('message', handleMessage);
-
-    return () => {
-      ws.removeEventListener('message', handleMessage);
-      ws.close();
-    };
-  }, []);
+    ws.addEventListener('close', () => {
+      setTimeout(() => {
+        console.log('Disconnected. Trying to reconnect.');
+        connectToWs();
+      }, 1000);
+    });
+  }
 
   useEffect(() => {
     scrollToBottom();
@@ -35,7 +40,10 @@ function ChatPage() {
 
   useEffect(() => {
     if (selectedUserId) {
-      axios.get('/messages/' + selectedUserId).then((res) => { });
+      axios.get('/messages/' + selectedUserId).then(res => {
+        // console.log(res.data)
+        setMessage(res.data);
+      })
     }
   }, [selectedUserId]);
 
@@ -47,21 +55,35 @@ function ChatPage() {
     setOnlinePeople(people);
   }
 
-  function handleMessage(e) {
-    const messageData = JSON.parse(e.data);
+  useEffect(() => { 
+    axios.get('/people').then (res => {
+      const offlinePeopleArr = res.data.filter(p => p._id !== id).filter(p => !onlinePeople[p._id]);
+      const offlinePeople = {};
+      offlinePeopleArr.forEach(p => {
+        offlinePeople[p._id] = p.username;
+      });
+      setOfflinePeople(offlinePeople);
+      
+    })
+  }, [onlinePeople]);
+
+
+  function handleMessage(ev) {
+    const messageData = JSON.parse(ev.data);
     if ('online' in messageData) {
       showOninePeople(messageData.online);
     } else if ('text' in messageData) {
-      setMessage((prev) => [...prev, { ...messageData }]);
+      setMessage(prev => ([...prev, { ...messageData }]));
     }
   }
 
-  function sendMessage(e) {
-    e.preventDefault();
+  function sendMessage(e,file= null) {
+    if(e) e.preventDefault();    
     ws.send(
       JSON.stringify({
-        recepient: selectedUserId,
+        recipient: selectedUserId,
         text: newMessage,
+        file
       })
     );
     setNewMessage('');
@@ -70,37 +92,94 @@ function ChatPage() {
       {
         text: newMessage,
         sender: id,
-        recepient: selectedUserId,
+        recipient: selectedUserId,
         id: Date.now(),
       },
     ]);
   }
+  function sendfile(ev) {
+    const reader = new FileReader();
+    reader.readAsDataURL(ev.target.files[0]);
+    reader.onload = function () {
+      sendMessage(null, {
+        info: ev.target.files[0],
+        data: reader.result,
+      })
+    }
+  }
+  
 
+  function logout() {
+    axios.post('/logout')
+      .then(() => {
+        setId(null);
+        setUsername(null);
+      })
+      .catch((error) => {
+        console.error("Logout failed", error);
+        // Optionally handle logout failure
+      });
+  }
   const excludeself = { ...onlinePeople };
   delete excludeself[id];
 
-  const noDupMsg = uniqBy(message, 'id');
+  const noDupMsg = uniqBy(message, '_id');
 
   return (
     <div className="flex h-screen bg-[#1a1c23] text-white font-mono">
       {/* Contacts List */}
-      <div className="w-1/4 bg-[#252836] p-4 border-r border-[#3b3f51]">
-        <h2 className="text-xl font-semibold mb-4 text-[#a6a8b9]">Contacts</h2>
-        <div className="space-y-2">
-          {Object.keys(excludeself).map((userId) => (
-            <div
-              onClick={() => selectedUserId ? setSelectedUserId('') : setSelectedUserId(userId)}
-              key={userId}
-              className={`p-2 flex items-center cursor-pointer rounded-md transition-all duration-150 ${userId === selectedUserId
-                  ? 'bg-[#3b82f6] text-white'
-                  : 'bg-[#2e3140] text-[#a6a8b9]'
-                } hover:bg-[#343746] hover:text-white`}
-            >
-              <span className="text-sm">{onlinePeople[userId]}</span>
-            </div>
-          ))}
+      <div className="w-1/4 bg-[#252836] p-4 border-r border-[#3b3f51] flex flex-col justify-between">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-[#a6a8b9]">Contacts</h2>
+          <div className="space-y-2">
+            {/* Online People */}
+            {Object.keys(excludeself).map((userId) => (
+              <div
+                onClick={() =>
+                  selectedUserId ? setSelectedUserId('') : setSelectedUserId(userId)
+                }
+                key={userId}
+                className={`p-2 flex items-center cursor-pointer rounded-md transition-all duration-150 ${userId === selectedUserId
+                    ? 'bg-[#3b82f6] text-white'
+                    : 'bg-[#2e3140] text-[#a6a8b9]'
+                  } hover:bg-[#343746] hover:text-white`}
+              >
+                <OnlineInd online={true} />
+                <span className="text-sm ml-4">{onlinePeople[userId]}</span>
+              </div>
+            ))}
+
+            {/* Offline People */}
+            {Object.keys(offlinePeople).map((userId) => (
+              <div
+                onClick={() =>
+                  selectedUserId ? setSelectedUserId('') : setSelectedUserId(userId)
+                }
+                key={userId}
+                className={`p-2 flex items-center cursor-pointer rounded-md transition-all duration-150 ${userId === selectedUserId
+                    ? 'bg-[#3b82f6] text-white'
+                    : 'bg-[#2e3140] text-[#a6a8b9]'
+                  } hover:bg-[#343746] hover:text-white`}
+              >
+                <OnlineInd online={false} />
+                <span className="text-sm ml-4">{offlinePeople[userId]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Username and Logout Button */}
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-[#2e3140] rounded-md mt-4 space-y-2 sm:space-y-0">
+          <span className="text-sm text-[#a6a8b9] mb-2 sm:mb-0">{username}</span>
+          <button
+            onClick={logout}
+            className="w-full sm:w-auto bg-[#3b82f6] text-white text-sm px-4 py-2 rounded-md hover:bg-[#2e6bd0] transition-all duration-150"
+          >
+            Logout
+          </button>
         </div>
       </div>
+    
 
       {/* Chat Area */}
       <div className="w-3/4 p-4 flex flex-col">
@@ -116,6 +195,7 @@ function ChatPage() {
                         : 'bg-[#2e3140] text-[#a6a8b9] self-start animate-slide-in-left'
                       }`}
                   >
+                    {/* {console.log(message.sender)} */}
                     {messages.text}
                   </div>
                 ))}
@@ -126,16 +206,31 @@ function ChatPage() {
         </div>
 
         {!!selectedUserId && (
-          <form onSubmit={sendMessage} className="mt-4 flex items-center">
+          <form onSubmit={sendMessage} className="mt-4 flex items-center space-x-2">
+            <label htmlFor="fileUpload" className="cursor-pointer">
+              <div className="bg-[#2e3140] text-white p-2 rounded-lg hover:bg-[#3b82f6] transition-all duration-150 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <input
+                type="file"
+                id="fileUpload"
+                className="hidden"
+                onChange={sendfile}
+              />
+            </label>
+
             <input
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               className="flex-grow p-2 bg-[#2e3140] text-white rounded-lg h-12 focus:ring-2 focus:ring-[#3b82f6] transition-all duration-150"
             />
+
             <button
               type="submit"
-              className="ml-4 px-4 py-2 bg-[#3b82f6] text-white rounded-lg hover:bg-[#2563eb] transition-all duration-150"
+              className="px-4 py-2 bg-[#3b82f6] text-white rounded-lg hover:bg-[#2563eb] transition-all duration-150"
             >
               Send
             </button>
