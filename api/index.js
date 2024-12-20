@@ -191,29 +191,31 @@ wss.on("connection", (connection, req) => {
 
   connection.on("message", async (message) => {
     const messageData = JSON.parse(message.toString());
-    let filename = null;
-    // console.log(message.toString());
-    const { recipient, text , file } = messageData;
-    if(file){
-      const parts= file.name.split('.')
-      const ext = parts[parts.length-1]
-      const filename= Date.now()+'.'+ ext
-      const path = __dirname+'/uploads/'+filename;
-      const bufferData = new  Buffer(file.data , 'base64')
-      fs.writeFile(path,bufferData,()=> {
-        console.log('file saved'+path)
-      })
+    let filename = null; // Define filename here
+    const { recipient, text, file } = messageData;
+
+    if (file) {
+      const parts = file.name.split(".");
+      const ext = parts[parts.length - 1];
+      filename = Date.now() + "." + ext; // Assign to the outer filename variable
+      const path = __dirname + "/uploads/" + filename;
+      const bufferData = Buffer.from(file.data.split(',')[1], "base64");
+      fs.writeFile(path, bufferData, () => {
+        console.log("File saved at:", path);
+      });
     }
-    if (recipient && text) {
+
+    if (recipient && (text || file)) {
       const messageDoc = await Message.create({
         sender: connection.userId,
         recipient,
         text,
-        file:file ? filename : null
+        file: file ? filename : null, // Use the updated filename
       });
-      // console.log(messageDoc.text);
+
+      console.log("Filename:", filename); // Should now log the correct filename
+
       [...wss.clients]
-      // console.log(text)
         .filter((c) => c.userId === recipient)
         .forEach((c) =>
           c.send(
@@ -221,6 +223,7 @@ wss.on("connection", (connection, req) => {
               text,
               sender: connection.userId,
               recipient,
+              file: filename ? filename : null,
               _id: messageDoc._id,
             })
           )

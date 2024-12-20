@@ -97,6 +97,23 @@ function ChatPage() {
         id: Date.now(),
       },
     ]);
+    if(file){
+      axios.get('/messages/' + selectedUserId).then(res => {
+        // console.log(res.data)
+        setMessage(res.data);
+      })
+    }else{
+      setNewMessage('');
+      setMessage((prev) => [
+        ...prev,
+        {
+          text: newMessage,
+          sender: id,
+          recipient: selectedUserId,
+          id: Date.now(),
+        },
+      ]);
+    }
   }
   function sendfile(ev) {
     const reader = new FileReader();
@@ -199,8 +216,33 @@ function ChatPage() {
                     {/* {console.log(message.sender)} */}
                     {messages.text}
                     {messages.file && (
-                      <div>
-                        <a herf="http://localhost:3000"/>
+                      <div className="mt-2 flex items-center space-x-2">
+                        {/* Link to open file in a new tab */}
+                        <a
+                          href={axios.defaults.baseURL + '/uploads/' + messages.file}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-[#] hover:underline"
+                        >
+                          {messages.file}
+                        </a>
+
+                        {/* Button to download the file */}
+                        <button
+                          className="bg-[#3b82f6] text-white px-2 py-1 rounded-md hover:bg-[#2563eb] transition-all duration-150 flex items-center justify-center"
+                          onClick={() => {
+                            // Create a temporary anchor element
+                            const link = document.createElement('a');
+                            link.href = axios.defaults.baseURL + '/uploads/' + messages.file;
+                            // Add download attribute with the filename
+                            link.setAttribute('download', messages.file);
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                        >
+                          <svg stroke="currentColor" fill="none" stroke-width="0" viewBox="0 0 24 24" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+                        </button>
                       </div>
                     )}
                   </div>
