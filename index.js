@@ -35,7 +35,8 @@ app.use('/uploads', express.static(__dirname + '/uploads'));
 app.use(
   cors({
     credentials: true,
-    origin: process.env.clientURL,
+    origin:"*", 
+    
   })
 );
 app.get("/test", (req, res) => {
