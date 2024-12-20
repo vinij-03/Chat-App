@@ -35,7 +35,7 @@ app.use('/uploads', express.static(__dirname + '/uploads'));
 app.use(
   cors({
     credentials: true,
-    origin: "https://chat-app-six-kappa-63.vercel.app/",
+    origin: "https://chat-app-six-kappa-63.vercel.app",
   })
 );
 app.get("/test", (req, res) => {
