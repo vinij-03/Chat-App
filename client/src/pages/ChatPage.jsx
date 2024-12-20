@@ -13,6 +13,7 @@ function ChatPage() {
   const messageEndRef = useRef(null);
   const [offlinePeople, setOfflinePeople] = useState({});
 
+
   const { username,  id , setId, setUsername } = useContext(UserContext);
 
   useEffect(() => {
@@ -102,7 +103,7 @@ function ChatPage() {
     reader.readAsDataURL(ev.target.files[0]);
     reader.onload = function () {
       sendMessage(null, {
-        info: ev.target.files[0],
+        name: ev.target.files[0].name,
         data: reader.result,
       })
     }
@@ -197,6 +198,11 @@ function ChatPage() {
                   >
                     {/* {console.log(message.sender)} */}
                     {messages.text}
+                    {messages.file && (
+                      <div>
+                        <a herf="http://localhost:3000"/>
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div ref={messageEndRef} />
