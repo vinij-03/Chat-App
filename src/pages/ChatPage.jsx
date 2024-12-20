@@ -20,7 +20,7 @@ function ChatPage() {
     connectToWs();
   }, [selectedUserId]);
   function connectToWs() {
-    const ws = new WebSocket('ws:https://psychological-issy-vineetjana-6c8595a2.koyeb.app');
+    const ws = new WebSocket('ws://psychological-issy-vineetjana-6c8595a2.koyeb.app');
     setWs(ws);
     ws.addEventListener('message', handleMessage);
     ws.addEventListener('close', () => {
