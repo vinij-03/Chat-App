@@ -6,7 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const ws = require("ws");
-const Message = require("./models/message");
+const Message = require("./models/Message");
 const fs = require("fs");
 
 const User = require("./models/model");
