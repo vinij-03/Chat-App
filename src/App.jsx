@@ -5,7 +5,7 @@ import { UserContextProvider } from './UserContext'
 
 function App() {
 
-  axios.defaults.baseURL = 'http://localhost:3000';
+  axios.defaults.baseURL = 'https://psychological-issy-vineetjana-6c8595a2.koyeb.app/';
 
   axios.defaults.withCredentials = true;
 
