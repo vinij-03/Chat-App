@@ -137,7 +137,11 @@ app.post("/register", async (req, res) => {
       (err, token) => {
         if (err) throw err;
         res
-          .cookie("token", token, { sameSite: "none", secure: true })
+          .cookie("token", token, {
+            httpOnly: true,
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production",
+          })
           .status(201)
           .json({
             id: createdUser._id,
